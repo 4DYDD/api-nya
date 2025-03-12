@@ -32,13 +32,14 @@ Route::get('/api/tes', function () {
     return response()->json(
         [
             [
-                "message" => "halo dunia",
+                "message" => "Halo Dunia",
                 "title" => "Selamat Malam Dunia",
-                "description" => "Lorem ipsum dolor sit amet
-                                  consectetur adipisicing elit. Provident, doloribus."
+                "description" => "Lorem ipsum dolor sit amet.
+                                  consectetur adipisicing elit. Provident, doloribus.
+                                  Minus possimus ducimus libero eveniet delectus quis?"
             ],
             [
-                "message" => "halo Oemat Manoesia",
+                "message" => "Halo Oemat Manoesia",
                 "title" => "Selamat Malam Oemat Manoesia",
                 "description" => "Lorem ipsum dolor sit amet
                                   consectetur adipisicing elit. doloribus, Provident."
@@ -64,7 +65,7 @@ Route::post('/api/users', function (Request $request) {
         $admin = User::where('token', $token)->first();
 
         if (!$admin) {
-            return response()->json(['message' => 'Bukan Admin'], 404);
+            return response()->json(['message' => 'Bukan Admin'], 403);
         }
 
         $validatedData = $request->validate([
@@ -83,9 +84,29 @@ Route::post('/api/users', function (Request $request) {
         $user->password = bcrypt($validatedData['password']);
         $user->save();
 
-        return response()->json(['message' => 'User created successfully'], 201);
+        return response()->json(['message' => 'User created successfully'], 200);
     } catch (\Illuminate\Validation\ValidationException $e) {
         // Jika validasi gagal, tangkap exception dan kirim respons error
         return response()->json(['errors' => $e->errors()], 422);
+    }
+});
+
+
+Route::delete('/api/users/{user:id}', function (Request $request, User $user) {
+    try {
+        $token = $request->header('X-API-TOKEN');
+        $admin = User::where('token', $token)->first();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Bukan Admin'], 403); // Ganti 404 dengan 403 (Forbidden)
+        }
+
+        // Hapus pengguna
+        $user->delete();
+
+        return response()->json(['message' => 'User deleted successfully'], 200); // Ganti 201 dengan 200 (OK)
+    } catch (\Exception $e) {
+        // Tangkap exception dan kirim respons error
+        return response()->json(['message' => 'Failed to delete user', 'error' => $e->getMessage()], 500); // Tambahkan pesan error
     }
 });
