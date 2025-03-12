@@ -4,6 +4,26 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// class generateToken
+// {
+//     public static $token;
+
+//     public function __construct()
+//     {
+//         self::$token = response()->json(['csrf_token' => csrf_token()]);
+//     }
+//     public static function getToken()
+//     {
+//         return self::$token;
+//     }
+// }
+
+// new generateToken();
+
+
+
+
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -28,16 +48,25 @@ Route::get('/api/tes', function () {
 });
 
 Route::get('/api/csrf-token', function () {
-    return response()->json(['csrf_token' => csrf_token()]);
+    $user = User::where("name", "admin")->first();
+
+    return response()->json(["token" => $user->token]);
 });
 
 Route::get('/api/users', function () {
-    $users = User::all();
+    $users = User::where("name", "!=", "admin")->get();
     return response()->json($users);
 });
 
 Route::post('/api/users', function (Request $request) {
     try {
+        $token = $request->header('X-API-TOKEN');
+        $admin = User::where('token', $token)->first();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Bukan Admin'], 404);
+        }
+
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
