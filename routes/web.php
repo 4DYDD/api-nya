@@ -92,6 +92,46 @@ Route::post('/api/users', function (Request $request) {
 });
 
 
+Route::put('/api/users/{user:id}', function (Request $request, User $user) {
+    try {
+        $token = $request->header('X-API-TOKEN');
+        $admin = User::where('token', $token)->first();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Bukan Admin'], 403);
+        }
+
+        // Validasi data yang masuk
+        $validatedData = $request->validate([
+            'name' => 'sometimes|nullable|string|max:255',
+            'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id, // Abaikan email saat ini
+            'password' => 'sometimes|nullable|min:8',
+        ]);
+
+        // Update data pengguna
+        if (isset($validatedData['name'])) {
+            $user->name = $validatedData['name'];
+        }
+
+        if (isset($validatedData['email'])) {
+            $user->email = $validatedData['email'];
+        }
+
+        if (isset($validatedData['password'])) {
+            $user->password = Hash::make($validatedData['password']);
+        }
+
+        $user->save();
+
+        return response()->json(['message' => 'User updated successfully'], 200);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json(['errors' => $e->errors()], 422);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Failed to update user', 'error' => $e->getMessage()], 500);
+    }
+});
+
+
 Route::delete('/api/users/{user:id}', function (Request $request, User $user) {
     try {
         $token = $request->header('X-API-TOKEN');
